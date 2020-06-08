@@ -363,6 +363,13 @@ static int switchtec_pax_list(int argc, char **argv, struct command *command,
 		for (j = 0; j < function_n; j++) {
 			pax->pdfid = functions[j].pdfid;
 			memset(ns_list, 0, sizeof(ns_list));
+			ret = switchtec_ep_tunnel_status(pax->dev, pax->pdfid, &pax->channel_status);
+			if (ret)
+				switchtec_perror("Getting EP tunnel status");
+
+			if (pax->channel_status == SWITCHTEC_EP_TUNNEL_DISABLED)
+				switchtec_ep_tunnel_enable(pax->dev, pax->pdfid);
+
 			err = nvme_identify_ns_list(0, 0, 1, ns_list);
 			if (!err) {
 				for (k = 0; k < 1024; k++)
@@ -376,6 +383,9 @@ static int switchtec_pax_list(int argc, char **argv, struct command *command,
 						nvme_status_to_string(err), err, 0);
 			else
 				perror("id namespace list");
+
+			if (pax->channel_status == SWITCHTEC_EP_TUNNEL_DISABLED)
+				switchtec_ep_tunnel_disable(pax->dev, pax->pdfid);
 		}
 		switchtec_close(pax->dev);
 		free(pax);

@@ -51,6 +51,7 @@
 
 
 #include <switchtec/switchtec.h>
+#include <switchtec/fabric.h>
 #include <switchtec/mrpc.h>
 
 #include "common.h"
@@ -186,6 +187,12 @@ static int open_dev(char *dev)
 		global_device = &pax->device;
 		global_device->type = NVME_DEVICE_TYPE_PAX;
 		switchtec_set_pax_id(pax->dev, 0);//SWITCHTEC_PAX_ID_LOCAL);
+		err = switchtec_ep_tunnel_status(pax->dev, pax->pdfid, &pax->channel_status);
+		if (err)
+			switchtec_perror("Getting EP tunnel status");
+
+		if (pax->channel_status == SWITCHTEC_EP_TUNNEL_DISABLED)
+			switchtec_ep_tunnel_enable(pax->dev, pax->pdfid);
 
 		fd = 0;
 		err = 0;
@@ -228,6 +235,10 @@ int close_dev(struct nvme_device *device)
 	if (device->type == NVME_DEVICE_TYPE_PAX) {
 		struct pax_nvme_device *pax;
 		pax = to_pax_nvme_device(device);
+
+		if (pax->channel_status == SWITCHTEC_EP_TUNNEL_DISABLED)
+			switchtec_ep_tunnel_disable(pax->dev, pax->pdfid);
+
 		switchtec_close(pax->dev);
 		free(pax);
 
