@@ -351,7 +351,6 @@ static int switchtec_pax_list(int argc, char **argv, struct command *command,
 			return -ENODEV;
 		}
 		global_device = &pax->device;
-		global_device->type = NVME_DEVICE_TYPE_PAX;
 		switchtec_set_pax_id(pax->dev, 0);// SWITCHTEC_PAX_ID_LOCAL);
 
 		function_n = pax_get_nvme_pf_functions(pax, functions, 1024);
