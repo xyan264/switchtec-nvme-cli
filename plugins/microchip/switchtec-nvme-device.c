@@ -48,7 +48,25 @@ struct switchtec_device_manage_nvme_rsp
 	uint8_t nvme_data[SWITCHTEC_DEVICE_MANAGE_MAX_RESP - (4 * 4)];
 };
 
+struct switchtec_adm_passthru_nvme_req
+{
+	uint16_t pdfid;
+	uint16_t data_len;
+	uint16_t expected_rsp_len;
+	uint16_t rsvd;
+	uint32_t nvme_sqe[16];
+	uint8_t nvme_data[MRPC_MAX_DATA_LEN - 8 - (16 * 4)];
+};
 
+struct switchtec_adm_passthru_nvme_rsp
+{
+	uint16_t rsp_len;
+	uint16_t rsvd;
+	uint32_t nvme_cqe[4];
+	uint8_t nvme_data[SWITCHTEC_ADM_PASSTHRU_MAX_RESP - (4 * 4)];
+};
+
+#if 0
 int pax_nvme_submit_admin_passthru(int fd, struct nvme_passthru_cmd *cmd)
 {
 	int ret;
@@ -99,6 +117,61 @@ int pax_nvme_submit_admin_passthru(int fd, struct nvme_passthru_cmd *cmd)
 
 	return status;
 }
+
+#else
+
+int pax_nvme_submit_admin_passthru(int fd, struct nvme_passthru_cmd *cmd)
+{
+	int ret;
+
+	struct pax_nvme_device *pax;
+	struct switchtec_adm_passthru_nvme_req req;
+	struct switchtec_adm_passthru_nvme_rsp rsp;
+	int data_len;
+	int status;
+
+	memset(&req, 0, sizeof(req));
+	memset(&rsp, 0, sizeof(rsp));
+	pax = to_pax_nvme_device(global_device);
+
+	req.pdfid = pax->pdfid;
+	memcpy(&req.nvme_sqe, cmd, 16 * 4);
+
+	/* sqe[9] should be 0 per spec */
+	req.nvme_sqe[9] = 0;
+
+	if (cmd->data_len > sizeof(req.nvme_data))
+		data_len = sizeof(req.nvme_data);
+	else
+		data_len = cmd->data_len;
+
+	memcpy(req.nvme_data, (void *)cmd->addr, data_len);
+	req.data_len = data_len + 16 * 4;
+
+	req.expected_rsp_len = (sizeof(rsp.nvme_cqe) + cmd->data_len);
+
+	ret = switchtec_adm_passthru(pax->dev,
+				     (struct switchtec_adm_passthru_req *)&req,
+				     (struct switchtec_adm_passthru_rsp *)&rsp);
+
+	if (ret) {
+		switchtec_perror("device_manage_cmd");
+		return ret;
+	}
+
+	status = (rsp.nvme_cqe[3] & 0xfffe0000) >> 17;
+	if (!status) {
+		cmd->result = rsp.nvme_cqe[0];
+		if (cmd->addr) {
+			memcpy((uint64_t *)cmd->addr,
+				rsp.nvme_data,
+				rsp.rsp_len - 4 * 4);
+		}
+	}
+
+	return status;
+}
+#endif
 
 int pax_nvme_io(int fd, struct nvme_user_io *io)
 {
