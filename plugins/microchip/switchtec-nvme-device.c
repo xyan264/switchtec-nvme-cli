@@ -155,7 +155,7 @@ int pax_nvme_submit_admin_passthru(int fd, struct nvme_passthru_cmd *cmd)
 				     (struct switchtec_adm_passthru_rsp *)&rsp);
 
 	if (ret) {
-		switchtec_perror("device_manage_cmd");
+		switchtec_perror("switchtec_adm_passthru");
 		return ret;
 	}
 
