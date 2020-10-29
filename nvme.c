@@ -148,7 +148,7 @@ static void *nvme_alloc(size_t len, bool *huge)
 
 extern struct nvme_device *global_device;
 
-static int open_dev(char *dev)
+int open_global_device(char *dev)
 {
 	int err, fd;
 	char device_str[64];
@@ -272,7 +272,7 @@ static int get_dev(int argc, char **argv)
 	if (ret)
 		return ret;
 
-	return open_dev(argv[optind]);
+	return open_global_device(argv[optind]);
 }
 
 int parse_and_open(int argc, char **argv, const char *desc,

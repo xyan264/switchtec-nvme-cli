@@ -107,4 +107,6 @@ void free_topology(struct nvme_topology *t);
 char *get_nvme_subsnqn(char *path);
 char *nvme_get_ctrl_attr(char *path, const char *attr);
 
+int open_global_device(char *dev);
+
 #endif /* _NVME_H */

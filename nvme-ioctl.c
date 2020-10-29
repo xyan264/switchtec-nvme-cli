@@ -70,7 +70,7 @@ int nvme_ns_rescan(int fd)
 
 int nvme_get_nsid(int fd)
 {
-	static struct stat nvme_stat;
+	extern struct stat nvme_stat;
 	int err = fstat(fd, &nvme_stat);
 
 	if (err < 0)

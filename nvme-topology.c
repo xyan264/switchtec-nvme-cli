@@ -357,9 +357,9 @@ static int verify_legacy_ns(struct nvme_namespace *n)
 		char tmp_address[64] = "";
 		legacy_get_pci_bdf(path, tmp_address);
 		if (tmp_address[0]) {
-			if (asprintf(&n->ctrl->transport, "pcie") != 1)
+			if (asprintf(&n->ctrl->transport, "pcie") < 0)
 				return -1;
-			if (asprintf(&n->ctrl->address, "%s", tmp_address) != 1)
+			if (asprintf(&n->ctrl->address, "%s", tmp_address) < 0)
 				return -1;
 		}
 	}
@@ -426,7 +426,7 @@ static int legacy_list(struct nvme_topology *t)
 			continue;
 		ret = 0;
 
-		fd = open(path, O_RDONLY);
+		fd = open_global_device(path);
 		if (fd > 0) {
 			nvme_identify_ctrl(fd, &c->id);
 			close(fd);
