@@ -199,7 +199,10 @@ int pax_nvme_ns_rescan(int fd)
 
 int pax_nvme_submit_passthru(int fd, int ioctl_cmd, struct nvme_passthru_cmd *cmd)
 {
-	fprintf(stderr, "%s not implemented.\n", __FUNCTION__);
+	if(ioctl_cmd == (int)NVME_IOCTL_ADMIN_CMD)
+		return pax_nvme_submit_admin_passthru(fd, cmd);
+	else
+		fprintf(stderr, "%s not implemented.\n", __FUNCTION__);
 	return -1;
 }
 
